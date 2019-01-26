@@ -23,6 +23,8 @@ import logging
 game = hlt.Game()
 # At this point "game" variable is populated with initial map data.
 # This is a good place to do computationally expensive start-up pre-processing.
+logging.info(f"Game halite total amount: {game.game_map.halite_total}")
+
 # As soon as you call "ready" function below, the 2 second per turn timer will start.
 game.ready("HonirBot")
 
@@ -36,6 +38,7 @@ while True:
     # This loop handles each turn of the game. The game object changes every turn, and you refresh that state by
     #   running update_frame().
     game.update_frame()
+    logging.info(f"Game halite remaining amount: {game.game_map.halite_remaining}")
     # You extract player metadata and the updated map metadata here for convenience.
     me = game.me
     game_map = game.game_map

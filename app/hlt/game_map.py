@@ -68,9 +68,11 @@ class GameMap:
     Can be indexed by a position, or by a contained entity.
     Coordinates start at 0. Coordinates are normalized for you
     """
-    def __init__(self, cells, width, height):
+    def __init__(self, cells, width, height, total_halite):
         self.width = width
         self.height = height
+        self.halite_total = total_halite
+        self.halite_remaining = total_halite
         self._cells = cells
 
     def __getitem__(self, location):
@@ -171,26 +173,34 @@ class GameMap:
         :return: The map object
         """
         map_width, map_height = map(int, read_input().split())
+        halite_total = 0
         game_map = [[None for _ in range(map_width)] for _ in range(map_height)]
         for y_position in range(map_height):
             cells = read_input().split()
             for x_position in range(map_width):
+                halite_amount = int(cells[x_position])
+                halite_total += halite_amount
                 game_map[y_position][x_position] = MapCell(Position(x_position, y_position,
                                                                     normalize=False),
-                                                           int(cells[x_position]))
-        return GameMap(game_map, map_width, map_height)
+                                                           halite_amount)
+        return GameMap(game_map, map_width, map_height, halite_total)
 
     def _update(self):
         """
         Updates this map object from the input given by the game engine
         :return: nothing
         """
-        # Mark cells as safe for navigation (will re-mark unsafe cells
-        # later)
-        for y in range(self.height):
-            for x in range(self.width):
-                self[Position(x, y)].ship = None
-
         for _ in range(int(read_input())):
             cell_x, cell_y, cell_energy = map(int, read_input().split())
             self[Position(cell_x, cell_y)].halite_amount = cell_energy
+
+        halite_remaining = 0
+        # Iterate over each map cell and update state
+        for y in range(self.height):
+            for x in range(self.width):
+                # Update remaining map available halite
+                halite_remaining += self[Position(x, y)].halite_amount
+
+                # Mark cells as safe for navigation (will re-mark unsafe cells later)
+                self[Position(x, y)].ship = None
+        self.halite_remaining = halite_remaining
