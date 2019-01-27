@@ -17,10 +17,8 @@ from hlt.entity import ShipStatus
 # This is required because the regular STDOUT (print statements) are reserved for the engine-bot communication.
 import logging
 
-from engine.system import calc_halite_collection, calc_move_cost, calc_halite_proportion
-from engine.executor import CommandExecutor
-from engine.radar import radar_sweep
-from strategy.collection import get_optimal_halite_track, get_closest_dropoff_move
+from engine.system import calc_halite_proportion
+import executors
 
 """ <<<Game Begin>>> """
 
@@ -54,78 +52,9 @@ while True:
         calc_halite_proportion(game_map.halite_total, me.halite_amount),
         me.halite_amount
     ))
-
-    executor = CommandExecutor()
-
-    dropoffs = [x.position for x in me.get_dropoffs()] + [me.shipyard.position]
-    logging.info(f"Dropoffs: {dropoffs}")
-
-    for ship in me.get_ships():
-        # how much halite could we collect from current position if we remained
-        origin_halite = game_map[ship.position].halite_amount
-        origin_collection_halite = calc_halite_collection(origin_halite)
-        cell_move_cost = calc_move_cost(origin_halite)
-
-        logging.info(f"==== Ship {ship} ====")
-
-        logging.info(f"Cell: {ship.position}, {origin_halite} amount, {origin_collection_halite} collectable, {cell_move_cost} move cost")
-
-        if cell_move_cost > ship.halite_amount:
-            # Ship can't move anywhere until gathered enough halite to move
-            logging.debug("Ship {} {} not enough halite to move: {} / {}".format(
-                ship.id,
-                ship.position,
-                cell_move_cost,
-                ship.halite_amount
-            ))
-            executor.hold_position(ship)
-            continue
-
-        # determine whether to deliver cargo, continue mining or search for next mining spot
-
-        if origin_collection_halite > ship.space_remaining:
-            # Not enough space left to gather at current point, return to dropoff
-            ship.status = ShipStatus.DELIVER
-
-        if ship.position in dropoffs:
-            # Ship has dropped off, needs to move back onto the grid
-            ship.status = ShipStatus.GATHER
-
-        if ship.status == ShipStatus.DELIVER:
-            # move towards nearest dropoff point
-            move = get_closest_dropoff_move(game_map, ship, dropoffs)
-            next_position = ship.position.directional_offset(move)
-            if next_position in dropoffs:
-                logging.info("Ship depositing: {} halite".format(
-                    ship.halite_amount - cell_move_cost
-                ))
-
-            executor.move_direction(ship, move)
-            continue
-
-        if ship.status == ShipStatus.GATHER:
-            # sweep for next optimal position to move to
-            sweep = radar_sweep(game.my_id, game_map, ship.position)
-            score, track = get_optimal_halite_track(sweep)
-            if track.position == ship.position:
-                # optimal collecting point is current position
-                executor.hold_position(ship)
-            else:
-                # move to next position
-                move = game_map.naive_navigate(ship, track.position)
-                if move == Direction.Still:
-                    logging.warning(f"Optimal track didn't pick up on current position being best: {ship.id} {track}")
-                executor.move_direction(ship, move)
-            continue
-
-        logging.warning("We shouldn't get here, as it means the ship doesn't know what to do")
-        executor.move_randomly(ship)
-
-    # If the game is in the first 200 turns and you have enough halite, spawn a ship.
-    # Don't spawn a ship if you currently have a ship at port, though - the ships will collide.
-    if game.turn_number <= 200 and me.halite_amount >= constants.SHIP_COST and not game_map[me.shipyard].is_occupied:
-        executor.add_command(me.shipyard.spawn())
+    
+    # Initialise the strategy turn processor (logic engine)
+    executor = executors.hlt_alpha.TurnProcessor(game)
 
     # Send your moves back to the game environment, ending this turn.
-    game.end_turn(executor.command_queue)
-
+    game.end_turn(executor.run())
