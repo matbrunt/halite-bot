@@ -1,3 +1,4 @@
+import logging
 import abc
 
 from . import commands, constants
@@ -52,6 +53,15 @@ class Shipyard(Entity):
         return commands.GENERATE
 
 
+class ShipStatus:
+    """
+    Ship action status
+    """
+    GATHER = "gather"
+    ATTACK = "attack"
+    DELIVER = "deliver"
+
+
 class Ship(Entity):
     """
     Ship class to house ship entities
@@ -60,16 +70,34 @@ class Ship(Entity):
 
     def __init__(self, owner, id, position, halite_amount):
         super().__init__(owner, id, position)
+        self.status = ShipStatus.GATHER
         self.halite_amount = halite_amount
 
     @property
     def is_full(self):
         """Is this ship at max halite capacity?"""
-        return self.halite_amount >= constants.MAX_HALITE
+        # TODO: make space remaining threshold tunable
+        min_acceptable_space_remaining = 1
+        return self.space_remaining < min_acceptable_space_remaining
+
+    @property
+    def space_remaining(self):
+        """How much halite capacity is left?"""
+        return constants.MAX_HALITE - self.halite_amount
 
     def make_dropoff(self):
         """Return a move to transform this ship into a dropoff."""
         return "{} {}".format(commands.CONSTRUCT, self.id)
+
+    def move_randomly(self):
+        """
+        Return a random direction move to move this ship without
+        checking for collisions
+        """
+        direction = random.choice([ Direction.North, Direction.South, Direction.East, Direction.West ])
+        raw_direction = Direction.convert(direction)
+        logging.info(f"Move Random: {ship.id}, {ship.position} -> {ship.position.directional_offset(direction)}, {ship.status}, {raw_direction}")
+        return "{} {} {}".format(commands.MOVE, self.id, raw_direction)
 
     def move(self, direction):
         """
@@ -79,12 +107,14 @@ class Ship(Entity):
         raw_direction = direction
         if not isinstance(direction, str) or direction not in "nsewo":
             raw_direction = Direction.convert(direction)
+        logging.info(f"Move Direction: {self.id}, {self.position} -> {self.position.directional_offset(direction)}, {self.status}, {raw_direction}")
         return "{} {} {}".format(commands.MOVE, self.id, raw_direction)
 
     def stay_still(self):
         """
         Don't move this ship.
         """
+        logging.info(f"Hold Position: {self.id}, {self.position}, {self.status}")
         return "{} {} {}".format(commands.MOVE, self.id, commands.STAY_STILL)
 
     @staticmethod
@@ -112,7 +142,9 @@ class Ship(Entity):
             return ship_id, new_ship
 
     def __repr__(self):
-        return "{}(id={}, {}, cargo={} halite)".format(self.__class__.__name__,
+        return "{}(id={}, {}, cargo={} ({} remaining), status={})".format(self.__class__.__name__,
                                                        self.id,
                                                        self.position,
-                                                       self.halite_amount)
+                                                       self.halite_amount,
+                                                       self.space_remaining,
+                                                       self.status)

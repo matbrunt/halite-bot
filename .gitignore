@@ -1,10 +1,18 @@
+# Local Assets
 archive
 replays
 replays_external
-fluorine
 samples
 
+# Build Files
 Halite3Tools.zip
 
+# Supporting apps
+fluorine
+halite3-gym
+
+# Development artifacts
 .vscode
 *.pyc
+__pycache__
+.ipynb_checkpoints

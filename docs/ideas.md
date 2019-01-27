@@ -34,3 +34,15 @@ How do we determine where to build a shipyard?
 - Or halfway between existing shipyard and deposits, to minimise the return cost of ships?
 
 ---
+**Aggressive Posture**
+
+Tunable parameter for either:
+- max num of assault ships, e.g. 4
+- proportion of total ships to use for assault, e.g. 0.2
+
+Mark these ships as attack ships, their purpose is to intentionally collide with max halite opponent ships.
+
+Shadow attack ships with collection ships, to recover the dropped halite following collision.
+
+- Dedicated attack ships, or repurpose ships in the area if a opportunistic target appears?
+- If no viable halite in surrounding area, but viable enemy ships, change posture to attack
