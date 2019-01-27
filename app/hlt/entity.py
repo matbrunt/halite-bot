@@ -98,12 +98,10 @@ class Ship(Entity):
             raw_direction = Direction.convert(direction)
         return "{} {} {}".format(commands.MOVE, self.id, raw_direction)
 
-    def stay_still(self, update_status=None):
+    def stay_still(self):
         """
         Don't move this ship.
         """
-        if update_status is not None:
-            self.status = update_status
         return "{} {} {}".format(commands.MOVE, self.id, commands.STAY_STILL)
 
     @staticmethod
