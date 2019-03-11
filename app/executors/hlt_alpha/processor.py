@@ -33,6 +33,11 @@ class TurnProcessor:
         return self.command_queue
 
     def post_execute(self):
+        if len(self.me.get_ships()) < 1:
+            self.add_command(self.me.shipyard.spawn())
+
+        return
+
         # If the game is in the first 200 turns and you have enough halite, spawn a ship.
         # Don't spawn a ship if you currently have a ship at port, though - the ships will collide.
         if self.game.turn_number <= 200 \

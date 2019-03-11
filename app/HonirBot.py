@@ -23,7 +23,7 @@ import executors
 """ <<<Game Begin>>> """
 
 # This game object contains the initial game state.
-game = hlt.Game(log_level=logging.INFO)
+game = hlt.Game(log_level=logging.WARN)
 # At this point "game" variable is populated with initial map data.
 # This is a good place to do computationally expensive start-up pre-processing.
 logging.info(f"Game halite total amount: {game.game_map.halite_total}")
